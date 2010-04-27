@@ -273,29 +273,36 @@ function open_value_monitor( file, clock, save_time )
 	str asc = { __find_value_monitor { file } }
 	if ( { strcmp { asc } "" } == 0 )
 		int count = { getfield /monitor _count }
+		asc = "/monitor/m" @ { count }
 		
 		// Also clear out the file on disk
 		openfile { file } w
 		closefile { file }
 		
-		create asc_file /monitor/m{ count }
+		create asc_file { asc }
 		
 		setfield ^ \
 			leave_open 1 \
 			append 1 \
-			filename { file } \
-			notime { 0 == save_time }
-		
-		useclock ^ { clock }
+			filename { file }
 		
 		addfield ^ _columns
-		if ( save_time )
-			setfield ^ _columns "#Time "
-		else
-			setfield ^ _columns "# "
-		end
 		
 		setfield /monitor _count { count + 1 }
+	end
+	
+	// All of the following is outside the above 'if' because this allows this
+	// function to be called more than once for the same file, with new values
+	// for 'clock' and 'save_time'.
+	useclock { asc } { clock }
+	
+	setfield { asc } \
+		notime { 0 == save_time }
+	
+	if ( save_time )
+		setfield { asc } _columns "#Time "
+	else
+		setfield { asc } _columns "#"
 	end
 end
 

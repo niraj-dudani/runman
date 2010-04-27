@@ -220,9 +220,15 @@ function process_line
 		else
 			setglobal { argv 2 } { argv 3 }
 			
-			// SIMDT and SIMLENGTH should be registered with /synput, in case
+			// Update anything that depends on global variables, but has already
+			// been set at the beginning of an iteration.
+			// e.g.: SIMDT and SIMLENGTH should be registered with /synput, in case
 			// they have been changed.
 			update_synput { getglobal SIMDT } { getglobal SIMLENGTH }
+			open_value_monitor \
+				{ value_file } \
+				{ IOCLOCK } \
+				{ getglobal MONITOR_VALUE_SAVE_TIME }
 			
 			// Also update clocks
 			set_clocks
