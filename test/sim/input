@@ -1,0 +1,131 @@
+# Model: kali-freund
+#
+# These simulations are to calibrate synaptic conductance to achieve somatic
+# EPSP amplitudes in the range of 0.1 - 0.5 mV (Magee and Cook, Nat. Neuroscience;
+# 3, 895). Inputs are given at compartments 1 (soma), 24, 110, 382 and 455
+# (455 is a 'leaf' compartment, i.e., extreme distal).
+#
+# Some globals:
+#  str METHOD = "hsolve"
+#  int CHANMODE = 0
+#  float SIMDT = 50e-6
+#  float IODT = 100e-6
+#  float SIMLENGTH = 0.3
+
+set SIMLENGTH 0.1
+monitor-value 1 Vm
+
+#
+# Compartment 1
+#
+iteration-begin
+	synaptic-input 1 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 1 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 1 stim 0.00 1.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 1 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 1 stim 0.00 5.0e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 1 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 1 stim 0.00 2.5e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 1 Vm
+iteration-end
+
+#
+# Compartment 24
+#
+iteration-begin
+	synaptic-input 24 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 24 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 24 stim 0.00 1.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 24 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 24 stim 0.00 5.0e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 24 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 24 stim 0.00 2.5e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 24 Vm
+iteration-end
+
+#
+# Compartment 110
+#
+iteration-begin
+	synaptic-input 110 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 110 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 110 stim 0.00 1.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 110 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 110 stim 0.00 5.0e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 110 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 110 stim 0.00 2.5e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 110 Vm
+iteration-end
+
+#
+# Compartment 382
+#
+iteration-begin
+	synaptic-input 382 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 382 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 382 stim 0.00 1.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 382 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 382 stim 0.00 5.0e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 382 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 382 stim 0.00 2.5e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 382 Vm
+iteration-end
+
+#
+# Compartment 455
+#
+iteration-begin
+	synaptic-input 455 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 455 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 455 stim 0.00 1.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 455 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 455 stim 0.00 5.0e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 455 Vm
+iteration-end
+
+iteration-begin
+	synaptic-input 455 stim 0.00 2.5e-10 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	monitor-value 455 Vm
+iteration-end

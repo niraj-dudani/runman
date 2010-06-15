@@ -27,6 +27,16 @@ float TAU2 = 1e-3
 
 str sim_dir = $1
 str MODEL_PATH = $2
+str iteration_first_s = $3
+str iteration_last_s = $4
+int iteration_first = -1
+int iteration_last = -1
+if ( { strcmp { iteration_first_s } "" } != 0 )
+	iteration_first = { iteration_first_s }
+end
+if ( { strcmp { iteration_last_s } "" } != 0 )
+	iteration_last = { iteration_last_s }
+end
 
 setenv SIMPATH { getenv SIMPATH } { MODEL_PATH }
 
@@ -86,6 +96,14 @@ int iterating = 0
 
 extern process_line
 
+function skip_iteration
+	return ( ! ( \
+			iteration == -1 || \
+			( iteration_first == -1 || iteration >= iteration_first ) && \
+			( iteration_last == -1 || iteration < iteration_last ) \
+		) )
+end
+
 function execute_global
 	int line_num_bac = line_num
 	line_num = 1
@@ -99,9 +117,22 @@ function execute_global
 	line_num = line_num_bac
 end
 
+function run_sim
+	write_value_monitor_header { value_file }
+	
+	init_solvers
+	reset
+	step { getglobal SIMLENGTH } -t
+end
+
 function iteration_begin
 	iteration = iteration + 1
 	iterating = 1
+	
+	if ( { skip_iteration } )
+		echo "iteration: "{ iteration }" (Skipped)"
+		return
+	end
 	
 	echo "iteration: "{ iteration }
 	
@@ -130,17 +161,14 @@ end
 function iteration_end
 	iterating = 0
 	
+	if ( { skip_iteration } )
+		return
+	end
+	
+	run_sim
 	close_value_monitor { value_file }
 	close_spike_monitor { spike_file }
 	close_synput_all
-end
-
-function run_sim
-	write_value_monitor_header { value_file }
-	
-	init_solvers
-	reset
-	step { getglobal SIMLENGTH } -t
 end
 
 function error( msg )
@@ -211,15 +239,17 @@ function process_line
 		if ( ! iterating )
 			error "Unmatched 'iteration-end'."
 		else
-			run_sim
 			iteration_end
 		end
+	elif ( { skip_iteration } )
+		/*
+		 * Do nothing.
+		 */
 	elif ( { strcmp { command } "set" } == 0 )
 		if ( argcount != 3 )
 			error "Usage: "{ command }" variable value"
 		else
 			setglobal { argv 2 } { argv 3 }
-			
 			// Update anything that depends on global variables, but has already
 			// been set at the beginning of an iteration.
 			// e.g.: SIMDT and SIMLENGTH should be registered with /synput, in case
