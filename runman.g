@@ -255,6 +255,7 @@ function process_line
 			// e.g.: SIMDT and SIMLENGTH should be registered with /synput, in case
 			// they have been changed.
 			update_synput { getglobal SIMDT } { getglobal SIMLENGTH }
+			update_value_input { getglobal SIMDT } { getglobal SIMLENGTH }
 			open_value_monitor \
 				{ value_file } \
 				{ IOCLOCK } \
@@ -300,6 +301,17 @@ function process_line
 			
 			success = \
 				{ add_synput { file } { compt } { Ek } { gmax } { tau1 } { tau2 } }
+		end
+	elif ( { strcmp { command } "value-input" } == 0 )
+		if ( argcount != 4 )
+			error "Usage: "{ command }" object msg file"
+		else
+			str object = { argv 2 }
+			str msg = { argv 3 }
+			str file = { sim_dir } @ "/" @ { argv 4 }
+			
+			success = \
+				{ add_value_input { file } { object } { msg } }
 		end
 	// The following code will save tree state before the simulation is run, and
 	// hence is not useful. Besides, it is not tested.
@@ -356,6 +368,7 @@ ce { model_el }
 
 openfile { global_file } a
 init_synput { getglobal SIMDT } { getglobal SIMLENGTH }
+init_value_input { getglobal SIMDT } { getglobal SIMLENGTH }
 openfile { input_file } r
 while ( { process_line { readfile { input_file } } } )
 	line_num = line_num + 1

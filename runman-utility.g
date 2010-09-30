@@ -1,4 +1,172 @@
 ////////////////////////////////////////////////////////////////////////////////
+// Value input
+////////////////////////////////////////////////////////////////////////////////
+
+function init_value_input( simdt, simlength )
+	float simdt
+	float simlength
+	
+	if ( { exists /value_input } )
+		echo "Warning: init_value_input: /value_input already exists. Overwriting."
+	end
+	
+	create neutral /value_input
+	
+	addfield ^ _count
+	setfield ^ _count 0
+	
+	addfield ^ _simdt
+	setfield ^ _simdt { simdt }
+	
+	addfield ^ _simlength
+	setfield ^ _simlength { simlength }
+end
+
+function update_value_input( simdt, simlength )
+	float simdt
+	float simlength
+	
+	if ( !{ exists /value_input } )
+		init_value_input { simdt } { simlength }
+	else
+		setfield /value_input _simdt { simdt }
+		setfield /value_input _simlength { simlength }
+	end
+end
+
+function __find_value_input( file )
+	str file
+	
+	if ( ! { exists /value_input } )
+		echo "Error: __find_value_input: /value_input does not exist. Call init_value_input."
+		return ""
+	end
+	
+	int count = { getfield /value_input _count }
+	
+	// Search for existing table object which reads from the same file.
+	int i
+	int sindex = -1
+	str sfile
+	str tt
+	for ( i = 0 ; i < count ; i = i + 1 )
+		tt = "/value_input/t" @ { i }
+		if ( { exists { tt } } )
+			sfile = { getfield { tt } fname }
+			if ( { strcmp { sfile } { file } } == 0 )
+				sindex = i
+				i = count  // break out of loop
+			end
+		end
+	end
+	
+	if ( sindex == -1 )
+		return ""
+	else
+		return "/value_input/t" @ { sindex }
+	end
+end
+
+function __open_value_input( file )
+	str file
+	
+	if ( ! { exists /value_input } )
+		echo "Error: open_value_input: /value_input does not exist. Call init_value_input first."
+		return 0
+	end
+	
+	// If an object does not exist for the same file, create a new one.
+	str tt = { __find_value_input { file } }
+	if ( { strcmp { tt } "" } == 0 )
+		int count = { getfield /value_input _count }
+		float simdt = { getfield /value_input _simdt }
+		float simlength = { getfield /value_input _simlength }
+		float xdivs = { simlength } / { simdt }
+		
+		str tt = "/value_input/t" @ { count }
+		
+		create table { tt }
+		
+		setfield { tt } \
+			step_mode 2 \
+			stepsize 0
+		
+		addfield { tt } fname
+		setfield { tt } fname { file }
+		
+		call { tt } TABCREATE 1 0.0 1.0
+		file2tab { file } { tt } table -xy { xdivs }
+		
+		setfield /value_input _count { count + 1 }
+	end
+	
+	return 1
+end
+
+function close_value_input_all
+	if ( ! { exists /value_input } )
+		echo "Error: close_value_input_all: /value_input does not exist. Call init_value_input first."
+		return 0
+	end
+	
+	setfield /value_input _count 0
+	str s
+	foreach s ( { el /value_input/# } )
+		delete { s }
+	end
+	return 1
+end
+
+// Unlikely to be needed
+function close_value_input( file )
+	str file
+	
+	if ( ! { exists /value_input } )
+		echo "Error: close_value_input: /value_input does not exist. Call init_value_input first."
+		return 0
+	end
+	
+	str tt = { __find_value_input { file } }
+	if ( { strcmp { tt } "" } == 0 )
+		echo "Error: close_value_input: File '"{ file }"' not opened yet."
+		return 0
+	end
+	
+	delete { tt }
+	
+	return 1
+end
+
+/*
+ * Reads in file containing numbers in 2 columns: Time, Value. The values are
+ * passed on to the given element via the given message.
+ */
+function add_value_input( file, el, msg )
+	str file
+	str el
+	str msg
+	
+	if ( !{ exists { el } } )
+		echo "Error: add_value_input: Object "{ el }" does not exist."
+		return 0
+	end
+	
+	str tt = { __find_value_input { file } }
+	if ( { strcmp { tt } "" } == 0 )
+		if ( ! { __open_value_input { file } } )
+			echo "Error: add_value_input: open_value_input failed."
+			return 0
+		end
+		
+		tt = { __find_value_input { file } }
+	end
+	
+	addmsg { tt } { el } { msg } output
+	
+	return 1
+end
+
+////////////////////////////////////////////////////////////////////////////////
 // Synput
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -195,8 +363,9 @@ function add_synput( file, el, Ek, gmax, tau1, tau2 )
 			echo "Error: add_synput: open_synput failed."
 			return 0
 		end
+		
+		tt = { __find_synput { file } }
 	end
-	tt = { __find_synput { file } }
 	
 	if ( gmax < 0.0 || tau1 < 0.0 || tau2 < 0.0 )
 		echo "Error: add_synput: gmax, tau1 and tau2 should be non-negative."
