@@ -20,10 +20,15 @@ addglobal float MONITOR_SPIKES_REFRACTORY 2e-3
 addglobal int MONITOR_VALUE_SAVE_TIME 1
 
 // Default params for synaptic-input
-float EK = 0.0
-float GMAX = 1e-8
-float TAU1 = 1e-3
-float TAU2 = 1e-3
+float SYN_EK = 0.0
+float SYN_GMAX = 1e-8
+float SYN_TAU1 = 1e-3
+float SYN_TAU2 = 1e-3
+
+// Default params for mg-block
+float MGBLOCK_CMg = 0.0
+float MGBLOCK_A = 0.0
+float MGBLOCK_B = 0.0
 
 str sim_dir = $1
 str MODEL_PATH = $2
@@ -274,33 +279,95 @@ function process_line
 		if ( argcount != 5 )
 			error "Usage: "{ command }" Ek gmax tau1 tau2"
 		else
-			EK = { argv 2 }
-			GMAX = { argv 3 }
-			TAU1 = { argv 4 }
-			TAU2 = { argv 5 }
+			SYN_EK = { argv 2 }
+			SYN_GMAX = { argv 3 }
+			SYN_TAU1 = { argv 4 }
+			SYN_TAU2 = { argv 5 }
 		end
 	elif ( { strcmp { command } "synaptic-input" } == 0 )
 		if ( argcount != 7 && argcount != 3 )
 			error "Usage: "{ command }" compartment file [ Ek gmax tau1 tau2 ]"
 		else
 			float Ek, gmax, tau1, tau2
+			
+			str compt = { argv 2 }
+			str file = { sim_dir } @ "/" @ { argv 3 }
+			
 			if ( argcount == 7 )
 				Ek = { argv 4 }
 				gmax = { argv 5 }
 				tau1 = { argv 6 }
 				tau2 = { argv 7 }
 			else
-				Ek = EK
-				gmax = GMAX
-				tau1 = TAU1
-				tau2 = TAU2
+				Ek = SYN_EK
+				gmax = SYN_GMAX
+				tau1 = SYN_TAU1
+				tau2 = SYN_TAU2
 			end
+			
+			success = \
+				{ add_synput { file } { compt } { Ek } { gmax } { tau1 } { tau2 } }
+		end
+	elif ( { strcmp { command } "synaptic-input-mgblock" } == 0 )
+		int args_ok = 1
+		int si = -1     // Index at which "-syn" args begin.
+		int mbi = -1    // Index at which "-mgblock" args begin.
+		
+		/*
+		 * Checking and parsing args.
+		 * 
+		 * Bad way to do this. Better to have a function that "consumes" args,
+		 * but then this will also do.
+		 */
+		if ( argcount == 3 )
+			// Do nothing
+		elif ( argcount == 7 && { strcmp { argv 4 } "-mgblock" } == 0 )
+			mbi = 4
+		elif ( argcount == 8 && { strcmp { argv 4 } "-syn" } == 0 )
+			si = 4
+		elif ( argcount == 12 && { strcmp { argv 4 } "-mgblock" } == 0 && { strcmp { argv 8 } "-syn" } == 0 )
+			mbi = 4
+			si = 8
+		elif ( argcount == 12 && { strcmp { argv 4 } "-syn" } == 0 && { strcmp { argv 9 } "-mgblock" } == 0 )
+			mbi = 9
+			si = 4
+		else
+			args_ok = 0
+		end
+		
+		if ( ! args_ok )
+			error "Usage: "{ command }" compartment file [ -syn Ek gmax tau1 tau2 ] [ -mgblock CMg A B ]"
+		else
+			float Ek, gmax, tau1, tau2
+			float CMg, A, B
 			
 			str compt = { argv 2 }
 			str file = { sim_dir } @ "/" @ { argv 3 }
 			
+			if ( si == -1 )
+				Ek = SYN_EK
+				gmax = SYN_GMAX
+				tau1 = SYN_TAU1
+				tau2 = SYN_TAU2
+			else
+				Ek = { argv { si + 1} }
+				gmax = { argv { si + 2 } }
+				tau1 = { argv { si + 3 } }
+				tau2 = { argv { si + 4 } }
+			end
+			
+			if ( mbi == -1 )
+				CMg = MGBLOCK_CMg
+				A = MGBLOCK_A
+				B = MGBLOCK_B
+			else
+				CMg = { argv { mbi + 1 } }
+				A = { argv { mbi + 2 } }
+				B = { argv { mbi + 3 } }
+			end
+			
 			success = \
-				{ add_synput { file } { compt } { Ek } { gmax } { tau1 } { tau2 } }
+				{ add_synput_mgblock { file } { compt } { Ek } { gmax } { tau1 } { tau2 } { CMg } { A } { B } }
 		end
 	elif ( { strcmp { command } "value-input" } == 0 )
 		if ( argcount != 4 )

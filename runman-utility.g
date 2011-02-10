@@ -337,11 +337,49 @@ function __add_synput_to_compt( tt, compt )
 	return { syn }
 end
 
+function __mgblock( syn )
+	str syn
+	str mgblock = { syn } @ "/mgb"
+	return mgblock
+end
+
+function __add_synput_mgblock_to_compt( tt, compt )
+	str tt
+	str compt
+	
+	int count = { getfield { tt } _count }
+	
+	str syn = { tt } @ "/syn" @ { count }
+	str mgblock = { __mgblock { syn } }
+	
+	create synchan { syn }
+	create Mg_block { mgblock }
+	
+	/*
+	 *                                       =Gk,Ek=>
+	 * t.t =activation=> syn. =Gk,Ek=> m.b.           post.c.
+	 *                                      <==Vm===
+	 * 
+	 * t.t.      : Time-table object         : /synput/tt{n}
+	 * syn.      : Synaptic channel          : /synput/tt{n}/syn
+	 * m.b.      : Mg block                  : /synput/tt{n}/syn/mgb
+	 * post.c.   : Postsynaptic compartment  : (from user)
+	 */
+	__add_synput_to_synapse { tt } { syn }
+	addmsg { syn } { mgblock } CHANNEL Gk Ek
+	addmsg { mgblock } { compt } CHANNEL Gk Ek
+	addmsg { compt } { mgblock } VOLTAGE Vm
+	
+	setfield { tt } _count { count + 1 }
+	
+	return { syn }
+end
+
 /*
  * Gives a train of synaptic stimuli to a given compartment or synapse.
  * 
- * file: should contain a list of times to give stimuli at
- * el: should be a compartment, symcompartment or synchan
+ * file: should contain a list of times to give stimuli at.
+ * el: should be a 'compartment', 'symcompartment' or 'synchan'.
  * Ek, gmax, tau1, tau2: parameters for synaptic alpha-function.
  */
 function add_synput( file, el, Ek, gmax, tau1, tau2 )
@@ -357,6 +395,13 @@ function add_synput( file, el, Ek, gmax, tau1, tau2 )
 		return 0
 	end
 	
+	if ( gmax < 0.0 || tau1 <= 0.0 || tau2 <= 0.0 )
+		echo \
+			"Error: add_synput: gmax should be positive and tau1, tau2 should " \
+			"be non-negative."
+		return 0
+	end
+	
 	str tt = { __find_synput { file } }
 	if ( { strcmp { tt } "" } == 0 )
 		if ( ! { __open_synput { file } } )
@@ -365,11 +410,6 @@ function add_synput( file, el, Ek, gmax, tau1, tau2 )
 		end
 		
 		tt = { __find_synput { file } }
-	end
-	
-	if ( gmax < 0.0 || tau1 < 0.0 || tau2 < 0.0 )
-		echo "Error: add_synput: gmax, tau1 and tau2 should be non-negative."
-		return 0
 	end
 	
 	str syn
@@ -390,6 +430,85 @@ function add_synput( file, el, Ek, gmax, tau1, tau2 )
 		gmax { gmax } \
 		tau1 { tau1 } \
 		tau2 { tau2 }
+	
+	return 1
+end
+
+/*
+ * Gives a train of synaptic stimuli, blocked by an Mg_block, to a given
+ * compartment. Unlike 'add_synput', a synchan cannot be a target.
+ * 
+ * file: should contain a list of times to give stimuli at.
+ * el: should be a 'compartment' or 'symcompartment'. Unlike 'add_synput',
+ *     a 'synchan' is not allowed.
+ * Ek, gmax, tau1, tau2: parameters for synaptic alpha-function.
+ * CMg, A, B: attributes for Mg block object.
+ */
+function add_synput_mgblock( file, el, Ek, gmax, tau1, tau2, CMg, A, B )
+	str file
+	str el
+	float Ek
+	float gmax
+	float tau1
+	float tau2
+	float CMg
+	float A
+	float B
+	
+	if ( !{ exists { el } } )
+		echo "Error: add_synput_mgblock: Object "{ el }" does not exist."
+		return 0
+	end
+	
+	if ( gmax < 0.0 || tau1 <= 0.0 || tau2 <= 0.0 || CMg <= 0.0 )
+		echo \
+			"Error: add_synput_mgblock: gmax should be positive and tau1, " \
+			"tau2, CMg should be non-negative."
+		return 0
+	end
+	
+	str tt = { __find_synput { file } }
+	if ( { strcmp { tt } "" } == 0 )
+		if ( ! { __open_synput { file } } )
+			echo "Error: add_synput_mgblock: open_synput failed."
+			return 0
+		end
+		
+		tt = { __find_synput { file } }
+	end
+	
+	str syn
+	str mgblock
+	if ( { isa compartment { el } } || { isa symcomparment { el } } )
+		syn = { __add_synput_mgblock_to_compt { tt } { el } }
+	elif ( { isa synchan { el } } )
+		/*
+		 * Redundant check, because the next case takes care of this. But just
+		 * being explicit, because the similiar function 'add_synput' handles
+		 * synchans.
+		 */
+		echo \
+			"Error: add_synput_mgblock: Target object '"{ el }"' cannot be a synchan."
+		return 0
+	else
+		echo \
+			"Error: add_synput_mgblock: Object type of '"{ el }"' is not any of: " \
+			"compartment, symcompartment."
+		return 0
+	end
+	
+	mgblock = { __mbglock { syn } }
+	
+	setfield { syn } \
+		Ek { Ek } \
+		gmax { gmax } \
+		tau1 { tau1 } \
+		tau2 { tau2 }
+	
+	setfield { mgblock } \
+		CMg { CMg } \
+		A { A } \
+		B { B }
 	
 	return 1
 end
