@@ -340,7 +340,7 @@ end
 function __mgblock( syn )
 	str syn
 	str mgblock = { syn } @ "/mgb"
-	return mgblock
+	return { mgblock }
 end
 
 function __add_synput_mgblock_to_compt( tt, compt )
@@ -497,7 +497,7 @@ function add_synput_mgblock( file, el, Ek, gmax, tau1, tau2, CMg, A, B )
 		return 0
 	end
 	
-	mgblock = { __mbglock { syn } }
+	mgblock = { __mgblock { syn } }
 	
 	setfield { syn } \
 		Ek { Ek } \
@@ -507,8 +507,8 @@ function add_synput_mgblock( file, el, Ek, gmax, tau1, tau2, CMg, A, B )
 	
 	setfield { mgblock } \
 		CMg { CMg } \
-		A { A } \
-		B { B }
+		KMg_A { A } \
+		KMg_B { B }
 	
 	return 1
 end

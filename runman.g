@@ -321,14 +321,14 @@ function process_line
 		 */
 		if ( argcount == 3 )
 			// Do nothing
-		elif ( argcount == 7 && { strcmp { argv 4 } "-mgblock" } == 0 )
+		elif ( argcount == 7 && { strcmp { argv 4 } "+mgblock" } == 0 )
 			mbi = 4
-		elif ( argcount == 8 && { strcmp { argv 4 } "-syn" } == 0 )
+		elif ( argcount == 8 && { strcmp { argv 4 } "+syn" } == 0 )
 			si = 4
-		elif ( argcount == 12 && { strcmp { argv 4 } "-mgblock" } == 0 && { strcmp { argv 8 } "-syn" } == 0 )
+		elif ( argcount == 12 && { strcmp { argv 4 } "+mgblock" } == 0 && { strcmp { argv 8 } "+syn" } == 0 )
 			mbi = 4
 			si = 8
-		elif ( argcount == 12 && { strcmp { argv 4 } "-syn" } == 0 && { strcmp { argv 9 } "-mgblock" } == 0 )
+		elif ( argcount == 12 && { strcmp { argv 4 } "+syn" } == 0 && { strcmp { argv 9 } "+mgblock" } == 0 )
 			mbi = 9
 			si = 4
 		else
