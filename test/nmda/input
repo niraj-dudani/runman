@@ -12,7 +12,7 @@
 #  float IODT = 100e-6
 #  float SIMLENGTH = 0.3
 
-set SIMLENGTH 0.1
+set SIMLENGTH 0.3
 monitor-value 1 Vm
 
 #
@@ -20,13 +20,11 @@ monitor-value 1 Vm
 #
 iteration-begin
 	synaptic-input 1 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
-	monitor-value 1 Vm
 iteration-end
 
 #
 # Mg-blocked synaptic input
 #
 iteration-begin
-	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 1e-3 1e-3 +mgblock 2.0 3.0 0.0.167    # Compartment, stim-file, Ek, gmax, tau1, tau2
-	monitor-value 1 Vm
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 1e-3 1e-3 +mgblock 2.0 3.0 5.0    # Compartment, stim-file, Ek, gmax, tau1, tau2
 iteration-end
