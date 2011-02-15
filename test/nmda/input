@@ -1,30 +1,28 @@
 # Model: kali-freund
 #
-# These simulations are to calibrate synaptic conductance to achieve somatic
-# EPSP amplitudes in the range of 0.1 - 0.5 mV (Magee and Cook, Nat. Neuroscience;
-# 3, 895). Inputs are given at compartments 1 (soma), 24, 110, 382 and 455
-# (455 is a 'leaf' compartment, i.e., extreme distal).
-#
-# Some globals:
 #  str METHOD = "hsolve"
 #  int CHANMODE = 0
 #  float SIMDT = 50e-6
 #  float IODT = 100e-6
-#  float SIMLENGTH = 0.3
 
-set SIMLENGTH 0.3
+set SIMLENGTH 0.5
 monitor-value 1 Vm
+
+# Params to synaptic-input-mgblock:
+#     Compartment, stim-file
+#     Following "+syn": Ek, gmax, tau1, tau2
+#     Following "+mgblock": CMg, A, B
 
 #
 # Unblocked synaptic input
 #
 iteration-begin
-	synaptic-input 1 stim 0.00 5.0e-9 1e-3 1e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	synaptic-input 1 stim 0.00 5.0e-9 20e-3 40e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
 iteration-end
 
 #
 # Mg-blocked synaptic input
 #
 iteration-begin
-	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 1e-3 1e-3 +mgblock 2.0 3.0 5.0    # Compartment, stim-file, Ek, gmax, tau1, tau2
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3 40e-3 +mgblock 2.0 3.0 5.0
 iteration-end

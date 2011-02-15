@@ -614,18 +614,20 @@ function monitor_value( file, el, field )
 	str asc = { __find_value_monitor { file } }
 	if ( { strcmp { asc } "" } == 0 )
 		echo "Error: monitor_value: Monitor not found for file "{ file }"."
-		return
+		return 0
 	end
 	
 	if ( ! { exists { el } } )
 		echo "Error: monitor_value: Object "{ el }" not found."
-		return
+		return 0
 	end
 	
 	str columns = { getfield { asc } _columns } @ { el } @ "." @ { field } @ " "
 	setfield { asc } _columns { columns }
 	
 	addmsg { el } { asc } SAVE { field }
+	
+	return 1
 end
 
 function write_value_monitor_header( file )

@@ -26,9 +26,9 @@ float SYN_TAU1 = 1e-3
 float SYN_TAU2 = 1e-3
 
 // Default params for mg-block
-float MGBLOCK_CMg = 0.0
-float MGBLOCK_A = 0.0
-float MGBLOCK_B = 0.0
+float MGBLOCK_CMg = 2.0
+float MGBLOCK_A = 3.0
+float MGBLOCK_B = 0.0167
 
 str sim_dir = $1
 str MODEL_PATH = $2
@@ -98,6 +98,7 @@ str spike_file
 int line_num = 1
 int iteration = -1
 int iterating = 0
+int in_comment_block = 0
 
 extern process_line
 
@@ -181,6 +182,11 @@ function error( msg )
 	echo "Error: File '"{ input_file }"', Line #"{ line_num }": "{ msg }
 end
 
+function warning( msg )
+	str msg
+	echo "Warning: File '"{ input_file }"', Line #"{ line_num }": "{ msg }
+end
+
 function process_line
 	int i
 	if ( 0 )
@@ -195,20 +201,6 @@ function process_line
 	// EOF
 	if ( { { strlen { argv { argc } } } == 0 } )
 		return 0
-	end
-	
-	/*
-	 * While in the global section, write all the commands to a file, so that
-	 * we can fetch them later and execute them at the beginning of every
-	 * iteration.
-	 */
-	if ( iteration == -1 && { strcmp { argv 1  } "iteration-begin" } != 0 )
-		for ( i = 1; i <= { argc }; i = i + 1 )
-			writefile { global_file } { argv { i } }" " -n
-		end
-		writefile { global_file }
-		
-		return 1
 	end
 	
 	// Finding position of comments (#'ed text)
@@ -226,11 +218,62 @@ function process_line
 		return 1
 	end
 	
+	/*
+	 * Simple handling of C-style multi-line comment block.
+	 * 
+	 * The opening token is expected to be the first token in a line, while a
+	 * closing token is expected to be the last token in its line.
+	 * 
+	 * Also, if an opening token does not have a matching closing one, then the
+	 * entire file following the opening token is ignored.
+	 */
+	if ( { strcmp { argv 1 } "/*" } == 0 )
+		if ( in_comment_block )
+			warning \
+				"Beginning of comment-block ('/*') found inside another comment block."
+		elif ( { strcmp { argv { argcount } } "*/" } == 0 )
+			// Checking if a line starting with '/*' ends with '*/'.
+			// If it does, then ignore this line and return from this function,
+			// and don't bother about identifying this as a starting of a 
+			// comment block.
+			return 1
+		else
+			in_comment_block = 1
+		end
+	elif ( { strcmp { argv { argcount } } "*/" } == 0 )
+		if ( in_comment_block )
+			in_comment_block = 0
+			
+			return 1
+		else
+			error "Unmatched '*/'."
+		end
+	end
+	
+	if ( in_comment_block )
+		return 1
+	end
+	
 	str command = { argv 1 }
+	
+	/*
+	 * While in the global section, write all the commands to a file, so that
+	 * we can fetch them later and execute them at the beginning of every
+	 * iteration.
+	 */
+	if ( iteration == -1 && { strcmp { command  } "iteration-begin" } != 0 )
+		for ( i = 1; i <= { argcount }; i = i + 1 )
+			writefile { global_file } { argv { i } }" " -n
+		end
+		writefile { global_file }
+		
+		return 1
+	end
+	
 	if ( ! iterating && iteration >= 0 && { strcmp { command } "iteration-begin" } != 0 )
 		error "Global statements allowed only before iterations begin."
 		
-		return 1
+		return 0
 	end
 	
 	int success = 1
@@ -273,7 +316,7 @@ function process_line
 		if ( argcount != 3 )
 			error "Usage: "{ command }" object field"
 		else
-			monitor_value { value_file } { argv 2 } { argv 3 }
+			success = { monitor_value { value_file } { argv 2 } { argv 3 } }
 		end
 	elif ( { strcmp { command } "synaptic-input-defaults" } == 0 )
 		if ( argcount != 5 )
@@ -308,10 +351,35 @@ function process_line
 			success = \
 				{ add_synput { file } { compt } { Ek } { gmax } { tau1 } { tau2 } }
 		end
+	elif ( { strcmp { command } "synaptic-input-mgblock-defaults" } == 0 )
+		if ( argcount != 4 )
+			error "Usage: "{ command }" CMg A B"
+		else
+			MGBLOCK_CMg = { argv 2 }
+			MGBLOCK_A = { argv 3 }
+			MGBLOCK_B = { argv 4 }
+		end
 	elif ( { strcmp { command } "synaptic-input-mgblock" } == 0 )
+		/*
+		 * Allows one to add an "Mg block" element at a synapse. In principle
+		 * this form could be merged into the existing unblocked synaptic-input
+		 * command, but that would change syntax and break backward compat.
+		 * 
+		 * Also, this command accepts optional arguments for specifying
+		 * properties of the synaptic input and Mg block. If the the Mg block
+		 * properties are absent, it would be ambiguous whether the Mg block
+		 * should be left out, or if the default Mg block parameters should be
+		 * used. Could add extra syntax to handle that, but simplest just to
+		 * add this new command.
+		 * 
+		 * The optional switches are "+syn" and "+mgblock". Instead of the
+		 * traditional "-syn", "-mgblock", this is used because the "-" symbol
+		 * was trying to trigger optional arguments in some string handling
+		 * function calls (deep inside 'strcmp', i guess).
+		 */
 		int args_ok = 1
-		int si = -1     // Index at which "-syn" args begin.
-		int mbi = -1    // Index at which "-mgblock" args begin.
+		int si = -1     // Index at which "+syn" args begin.
+		int mbi = -1    // Index at which "+mgblock" args begin.
 		
 		/*
 		 * Checking and parsing args.
@@ -336,7 +404,7 @@ function process_line
 		end
 		
 		if ( ! args_ok )
-			error "Usage: "{ command }" compartment file [ -syn Ek gmax tau1 tau2 ] [ -mgblock CMg A B ]"
+			error "Usage: "{ command }" compartment file [ +syn Ek gmax tau1 tau2 ] [ +mgblock CMg A B ]"
 		else
 			float Ek, gmax, tau1, tau2
 			float CMg, A, B
@@ -425,6 +493,8 @@ function process_line
 	
 	if ( ! success )
 		error "Command '"{ command }"' failed."
+		
+		return 0
 	end
 	
 	return 1
