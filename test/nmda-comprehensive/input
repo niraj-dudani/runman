@@ -1,0 +1,114 @@
+# Model: kali-freund
+#
+#  str METHOD = "hsolve"
+#  int CHANMODE = 0
+#  float SIMDT = 50e-6
+#  float IODT = 100e-6
+
+set SIMLENGTH 0.5
+monitor-value 1 Vm
+
+# Ek, gmax, tau1, tau2
+synaptic-input-defaults 0.00 5.0e-9 5e-3 5e-3
+# CMg, A, B
+synaptic-input-mgblock-defaults 2.0 3.0 0.05
+
+# Params to synaptic-input-mgblock:
+#     Compartment, stim-file
+#     Following "+syn": Ek, gmax, tau1, tau2
+#     Following "+mgblock": CMg, A, B
+
+#
+# First an unblocked synaptic input is given for comparison.
+#
+# Then Mg-block'ed synaptic input is given in 7 different ways. The first 4 are
+# expected to give identical results, since the same parameters are specified
+# either explicitly or using default parameters specified locally in the same
+# iteration block.
+#
+# The next 3 should give different results since they pick some or all of their
+# parameters from the global defaults.
+#
+# Finally a few misformed commands are given to test error-handling.
+#
+
+#
+# Unblocked synaptic input
+#
+iteration-begin
+	synaptic-input 1 stim 0.00 5.0e-9 20e-3 40e-3    # Compartment, stim-file, Ek, gmax, tau1, tau2
+iteration-end
+
+#
+# Mg-blocked synaptic input: 1
+#
+iteration-begin
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3 40e-3 +mgblock 2.0 3.0 5.0
+iteration-end
+
+#
+# Mg-blocked synaptic input: 2
+#
+iteration-begin
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0 5.0 +syn 0.00 5.0e-9 20e-3 40e-3
+iteration-end
+
+#
+# Mg-blocked synaptic input: 3
+#
+iteration-begin
+	synaptic-input-mgblock-defaults 2.0 3.0 5.0
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3 40e-3
+iteration-end
+
+#
+# Mg-blocked synaptic input: 4
+#
+iteration-begin
+	synaptic-input-defaults 0.00 5.0e-9 20e-3 40e-3
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0 5.0
+iteration-end
+
+#
+# Mg-blocked synaptic input: 5
+#
+iteration-begin
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0 5.0
+iteration-end
+
+#
+# Mg-blocked synaptic input: 6
+#
+iteration-begin
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3 40e-3
+iteration-end
+
+#
+# Mg-blocked synaptic input: 7
+#
+iteration-begin
+	synaptic-input-mgblock 1 stim
+iteration-end
+
+#
+# Misformed commands. Expected to trigger error messages.
+#
+
+iteration-begin
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0 5.0 +syn_bad 0.00 5.0e-9 20e-3 40e-3
+	synaptic-input-mgblock 1 stim +mgblock_bad 2.0 3.0 5.0 +syn 0.00 5.0e-9 20e-3 40e-3
+	synaptic-input-mgblock 1 stim +syn_bad 0.00 5.0e-9 20e-3 40e-3 +mgblock 2.0 3.0 5.0
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3 40e-3 +mgblock_bad 2.0 3.0 5.0
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0 +syn 0.00 5.0e-9 20e-3 40e-3
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0 5.0 +syn 0.00 5.0e-9 20e-3
+	synaptic-input-mgblock 1 stim +mgblock_bad 2.0 3.0 5.0
+	synaptic-input-mgblock 1 stim +mgblock 2.0 3.0
+	synaptic-input-mgblock 1 stim +syn_bad 0.00 5.0e-9 20e-3 40e-3
+	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3
+	synaptic-input-mgblock 1 stim 0.00
+	synaptic-input-mgblock 1
+	synaptic-input-mgblock 1_bad stim
+	
+	# Absence of given file is not detected.
+	# synaptic-input-mgblock 1 stim_bad
+iteration-end
