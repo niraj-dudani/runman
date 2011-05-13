@@ -1,0 +1,9 @@
+set SIMLENGTH 0.1
+value-input 1 INJECT vm_trace
+monitor-value 1 inject
+
+iteration-begin
+iteration-end
+
+iteration-begin
+iteration-end

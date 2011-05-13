@@ -10,8 +10,8 @@ monitor-value 1 Vm
 
 # Ek, gmax, tau1, tau2
 synaptic-input-defaults 0.00 5.0e-9 5e-3 5e-3
-# CMg, A, B
-synaptic-input-mgblock-defaults 2.0 3.0 0.05
+# CMg, A, B, Ek, gmax, tau1, tau2
+synaptic-input-mgblock-defaults 2.0 3.0 0.05 0.00 5.0e-9 20e-3 20e-3
 
 # Params to synaptic-input-mgblock:
 #     Compartment, stim-file
@@ -57,7 +57,7 @@ iteration-end
 # Mg-blocked synaptic input: 3
 #
 iteration-begin
-	synaptic-input-mgblock-defaults 2.0 3.0 5.0
+	synaptic-input-mgblock-defaults 2.0 3.0 5.0 0.00 5.0e-9 5e-3 5e-3
 	synaptic-input-mgblock 1 stim +syn 0.00 5.0e-9 20e-3 40e-3
 iteration-end
 

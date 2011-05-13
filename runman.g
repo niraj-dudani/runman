@@ -29,6 +29,10 @@ float SYN_TAU2 = 1e-3
 float MGBLOCK_CMg = 2.0
 float MGBLOCK_A = 3.0
 float MGBLOCK_B = 0.0167
+float MGBLOCK_SYN_EK = 0.0
+float MGBLOCK_SYN_GMAX = 1e-8
+float MGBLOCK_SYN_TAU1 = 20e-3
+float MGBLOCK_SYN_TAU2 = 40e-3
 
 str sim_dir = $1
 str MODEL_PATH = $2
@@ -174,6 +178,7 @@ function iteration_end
 	run_sim
 	close_value_monitor { value_file }
 	close_spike_monitor { spike_file }
+	close_value_input_all
 	close_synput_all
 end
 
@@ -352,12 +357,16 @@ function process_line
 				{ add_synput { file } { compt } { Ek } { gmax } { tau1 } { tau2 } }
 		end
 	elif ( { strcmp { command } "synaptic-input-mgblock-defaults" } == 0 )
-		if ( argcount != 4 )
-			error "Usage: "{ command }" CMg A B"
+		if ( argcount != 8 )
+			error "Usage: "{ command }" CMg A B Ek gmax tau1 tau2"
 		else
 			MGBLOCK_CMg = { argv 2 }
 			MGBLOCK_A = { argv 3 }
 			MGBLOCK_B = { argv 4 }
+			MGBLOCK_SYN_EK = { argv 5 }
+			MGBLOCK_SYN_GMAX = { argv 6 }
+			MGBLOCK_SYN_TAU1 = { argv 7 }
+			MGBLOCK_SYN_TAU2 = { argv 8 }
 		end
 	elif ( { strcmp { command } "synaptic-input-mgblock" } == 0 )
 		/*
@@ -413,10 +422,10 @@ function process_line
 			str file = { sim_dir } @ "/" @ { argv 3 }
 			
 			if ( si == -1 )
-				Ek = SYN_EK
-				gmax = SYN_GMAX
-				tau1 = SYN_TAU1
-				tau2 = SYN_TAU2
+				Ek = MGBLOCK_SYN_EK
+				gmax = MGBLOCK_SYN_GMAX
+				tau1 = MGBLOCK_SYN_TAU1
+				tau2 = MGBLOCK_SYN_TAU2
 			else
 				Ek = { argv { si + 1} }
 				gmax = { argv { si + 2 } }
